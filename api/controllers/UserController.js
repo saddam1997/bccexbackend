@@ -28,14 +28,7 @@ var clientBCH = new bitcoinBCH.Client({
   user: sails.config.company.clientBCHuser,
   pass: sails.config.company.clientBCHpass
 });
-//PYY Wallet Details
-var bitcoinPYY = require('bitcoin');
-var clientPYY = new bitcoinPYY.Client({
-  host: sails.config.company.clientPYYhost,
-  port: sails.config.company.clientPYYport,
-  user: sails.config.company.clientPYYuser,
-  pass: sails.config.company.clientPYYpass
-});
+
 //GDS Wallet Details
 var bitcoinGDS = require('bitcoin');
 var clientGDS = new bitcoinGDS.Client({
@@ -97,60 +90,6 @@ module.exports = {
           email: userMailId
         }, {
           userGDSAddress: address
-        }, function(err, response) {
-          if (err)
-            return res.json({
-              "message": "Failed to update new address in database",
-              statusCode: 401
-            });
-
-          res.json({
-            "message": "Address has been generated and saved in database",
-            statusCode: 200
-          });
-        })
-      });
-    });
-  },
-  getNewPYYAddress: function(req, res) {
-    var userMailId = req.body.userMailId;
-    if (!userMailId)
-      return res.json({
-        "message": "Can't be empty!!!",
-        statusCode: 400
-      });
-    User.findOne({
-      email: userMailId
-    }).populateAll().exec(function(err, user) {
-      if (err) {
-        return res.json({
-          "message": "Error to find user",
-          statusCode: 401
-        });
-      }
-      if (!user) {
-        return res.json({
-          "message": "Invalid email!",
-          statusCode: 401
-        });
-      }
-      if (user.userPYYAddress)
-        return res.json({
-          "message": "address already exists",
-          statusCode: 401
-        });
-      clientPYY.cmd('getnewaddress', userMailId, function(err, address) {
-        if (err)
-          return res.json({
-            "message": "Failed to get new address from PYY server",
-            statusCode: 400
-          });
-
-        console.log('PYY address generated', address);
-        User.update({
-          email: userMailId
-        }, {
-          userPYYAddress: address
         }, function(err, response) {
           if (err)
             return res.json({
@@ -383,7 +322,8 @@ module.exports = {
               });
             }
             console.log('New address created from BCHServer :: ', newBCHAddressForUser);
-            clientPYY.cmd('getnewaddress', useremailaddress, function(err, newPYYAddressForUser, resHeaders) {
+
+            clientGDS.cmd('getnewaddress', useremailaddress, function(err, newGDSAddressForUser, resHeaders) {
               if (err) {
                 console.log("Error from sendFromBCHAccount:: ");
                 if (err.code && err.code == "ECONNREFUSED") {
@@ -403,71 +343,49 @@ module.exports = {
                   statusCode: 400
                 });
               }
-              console.log('New address created from newPYYAddressForUser :: ', newPYYAddressForUser);
-              clientGDS.cmd('getnewaddress', useremailaddress, function(err, newGDSAddressForUser, resHeaders) {
+              console.log('New address created from newGDSAddressForUser :: ', newGDSAddressForUser);
+              console.log('New address created from BCHServer :: ', newBCHAddressForUser);
+              bcrypt.hash(userspendingpassword, 10, function(err, hashspendingpassword) {
                 if (err) {
-                  console.log("Error from sendFromBCHAccount:: ");
-                  if (err.code && err.code == "ECONNREFUSED") {
-                    return res.json({
-                      "message": "BCH Server Refuse to connect App",
-                      statusCode: 400
-                    });
-                  }
-                  if (err.code && err.code < 0) {
-                    return res.json({
-                      "message": "Problem in BCH server",
-                      statusCode: 400
-                    });
-                  }
+                  console.log("Error To bcrypt spendingpassword");
                   return res.json({
-                    "message": "Error in BCH Server",
-                    statusCode: 400
+                    "message": err,
+                    statusCode: 500
                   });
                 }
-                console.log('New address created from newPYYAddressForUser :: ', newGDSAddressForUser);
-                console.log('New address created from BCHServer :: ', newBCHAddressForUser);
-                bcrypt.hash(userspendingpassword, 10, function(err, hashspendingpassword) {
-                  if (err) {
-                    console.log("Error To bcrypt spendingpassword");
-                    return res.json({
-                      "message": err,
-                      statusCode: 500
-                    });
+                var otpForEmail = crypto.randomBytes(20).toString('hex');;
+                console.log("otpForEmail :: " + otpForEmail);
+                bcrypt.hash(otpForEmail.toString(), 10, function(err, hash) {
+                  if (err) return next(err);
+                  var encOtpForEmail = hash;
+                  var userObj = {
+                    email: useremailaddress,
+                    password: userpassword,
+                    encryptedSpendingpassword: hashspendingpassword,
+                    userBTCAddress: newBTCAddressForUser,
+                    userBCHAddress: newBCHAddressForUser,
+                    userGDSAddress: newGDSAddressForUser,
+                    encryptedEmailVerificationOTP: encOtpForEmail,
+                    googlesecreatekey: googlesecreatekey
                   }
-                  var otpForEmail = crypto.randomBytes(20).toString('hex');;
-                  console.log("otpForEmail :: " + otpForEmail);
-                  bcrypt.hash(otpForEmail.toString(), 10, function(err, hash) {
-                    if (err) return next(err);
-                    var encOtpForEmail = hash;
-                    var userObj = {
-                      email: useremailaddress,
-                      password: userpassword,
-                      encryptedSpendingpassword: hashspendingpassword,
-                      userBTCAddress: newBTCAddressForUser,
-                      userBCHAddress: newBCHAddressForUser,
-                      userPYYAddress: newPYYAddressForUser,
-                      userGDSAddress: newGDSAddressForUser,
-                      encryptedEmailVerificationOTP: encOtpForEmail,
-                      googlesecreatekey: googlesecreatekey
+                  User.create(userObj).exec(function(err, userAddDetails) {
+                    if (err) {
+                      console.log("Error to Create New user !!!");
+                      console.log(err);
+                      return res.json({
+                        "message": "Error to create New User",
+                        statusCode: 400
+                      });
                     }
-                    User.create(userObj).exec(function(err, userAddDetails) {
-                      if (err) {
-                        console.log("Error to Create New user !!!");
-                        console.log(err);
-                        return res.json({
-                          "message": "Error to create New User",
-                          statusCode: 400
-                        });
-                      }
-                      console.log("User Create Succesfully...........");
+                    console.log("User Create Succesfully...........");
 
-                      var verificationURL = projectURL + "/user/verifyEmailAddress?email=" + useremailaddress + "&otp=" + otpForEmail;
-                      //console.log("verificationURL ::: " + verificationURL);
-                      var mailOptions = {
-                        from: sails.config.common.supportEmailId,
-                        to: useremailaddress,
-                        subject: 'Please verify email !!!',
-                        html: `
+                    var verificationURL = projectURL + "/user/verifyEmailAddress?email=" + useremailaddress + "&otp=" + otpForEmail;
+                    //console.log("verificationURL ::: " + verificationURL);
+                    var mailOptions = {
+                      from: sails.config.common.supportEmailId,
+                      to: useremailaddress,
+                      subject: 'Please verify email !!!',
+                      html: `
                         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
                         <html xmlns="http://www.w3.org/1999/xhtml" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                         <head>
@@ -589,7 +507,7 @@ module.exports = {
                                           </tr>
                                           <tr style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                                             <td class="content-block" style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; vertical-align: top; margin: 0; padding: 0 0 20px;" valign="top">
-                                              The Zenithnex Team
+                                              The bccxchange Team
                                             </td>
                                           </tr>
 
@@ -601,7 +519,7 @@ module.exports = {
                                     <table width="100%" style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                                       <tr style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
                                         <td class="aligncenter content-block" style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 12px; vertical-align: top; color: #999; text-align: center; margin: 0; padding: 0 0 20px;" align="center"
-                                          valign="top">Follow <a href="http://twitter.com/zenithnex" style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 12px; color: #999; text-decoration: underline; margin: 0;">@Mail_Gun</a> on Twitter.</td>
+                                          valign="top">Follow <a href="http://twitter.com/bccxchange.io" style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 12px; color: #999; text-decoration: underline; margin: 0;">@Mail_Gun</a> on Twitter.</td>
                                       </tr>
                                     </table>
                                   </div>
@@ -613,24 +531,24 @@ module.exports = {
                         </body>
 
                         </html>`
-                      };
-                      transporter.sendMail(mailOptions, function(error, info) {
-                        if (error) {
-                          console.log(error);
-                        } else {
-                          console.log('Email sent: ' + info.response);
-                          return res.json(200, {
-                            "message": "We sent link on your email address please verify link!!!",
-                            "userMailId": useremailaddress,
-                            statusCode: 200
-                          });
-                        }
-                      });
+                    };
+                    transporter.sendMail(mailOptions, function(error, info) {
+                      if (error) {
+                        console.log(error);
+                      } else {
+                        console.log('Email sent: ' + info.response);
+                        return res.json(200, {
+                          "message": "We sent link on your email address please verify link!!!",
+                          "userMailId": useremailaddress,
+                          statusCode: 200
+                        });
+                      }
                     });
                   });
                 });
               });
             });
+
           });
         });
 
@@ -664,7 +582,7 @@ module.exports = {
         });
       }
       if (user.verifyEmail) {
-        return res.redirect('http://zenithnex.com/loginnew.php');
+        return res.redirect('http://bccxchange.io');
         // return res.json({
         //   "message": "Email already verified !!",
         //   statusCode: 401
@@ -698,7 +616,7 @@ module.exports = {
                 });
               }
               console.log("Update passoword successfully!!!");
-              return res.redirect('http://zenithnex.com/loginnew.php');
+              return res.redirect('http://bccxchange.io');
               // res.json(200, {
               //   "message": "Email verified successfully",
               //   "userMailId": userMailId,
@@ -783,7 +701,7 @@ module.exports = {
                             <tr>
                               <td class="content-cell" style="box-sizing: border-box; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; padding: 35px; word-break: break-word;">
                                 <h1 style="box-sizing: border-box; color: #2F3133; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 19px; font-weight: bold; margin-top: 0;" align="left">Hi,</h1>
-                                <p style="box-sizing: border-box; color: #74787E; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 1.5em; margin-top: 0;" align="left">You recently requested to forgot your password for your Zenithnex account. Use the OTP below to reset it. <strong style="box-sizing: border-box; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;"></strong></p>
+                                <p style="box-sizing: border-box; color: #74787E; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 1.5em; margin-top: 0;" align="left">You recently requested to forgot your password for your bccxchange account. Use the OTP below to reset it. <strong style="box-sizing: border-box; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;"></strong></p>
 
                                 <table class="body-action" align="center" width="100%" cellpadding="0" cellspacing="0" style="box-sizing: border-box; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; margin: 30px auto; padding: 0; text-align: center; width: 100%;">
                                   <tr>
@@ -800,7 +718,7 @@ module.exports = {
                                   </tr>
                                 </table>
                                 <p style="box-sizing: border-box; color: #74787E; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 1.5em; margin-top: 0;" align="left">Thanks,
-                                <br />The Zenithnex Team</p>
+                                <br />The bccxchange Team</p>
                               </td>
                             </tr>
                           </table>

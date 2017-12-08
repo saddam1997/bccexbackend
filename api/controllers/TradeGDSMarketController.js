@@ -6,13 +6,13 @@
  */
 var BigNumber = require('bignumber.js');
 
-var statusZero = sails.config.company.statusZero;
-var statusOne = sails.config.company.statusOne;
-var statusTwo = sails.config.company.statusTwo;
+var statusZero = sails.config.common.statusZero;
+var statusOne = sails.config.common.statusOne;
+var statusTwo = sails.config.common.statusTwo;
 
-var statusZeroCreated = sails.config.company.statusZeroCreated;
-var statusOneSuccessfull = sails.config.company.statusOneSuccessfull;
-var statusTwoPending = sails.config.company.statusTwoPending;
+var statusZeroCreated = sails.config.common.statusZeroCreated;
+var statusOneSuccessfull = sails.config.common.statusOneSuccessfull;
+var statusTwoPending = sails.config.common.statusTwoPending;
 var constants = require('./../../config/constants');
 
 const txFeeGDSWithdrawSuccess = sails.config.common.txFeeGDSWithdrawSuccess;

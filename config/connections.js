@@ -45,7 +45,7 @@ module.exports.connections = {
     host: 'localhost',
     user: 'root', //optional
     password: 'password', //optional
-    database: 'zenithnex' //optional
+    database: 'bccexchange' //optional
   }
   // ,
   // memory: {
@@ -65,7 +65,7 @@ module.exports.connections = {
   //   port: 27017,
   //   //user: 'username', //optional
   //   //password: 'password', //optional
-  //   database: 'zenithnex' //optional
+  //   database: 'bccexchange' //optional
   // },
 
   /***************************************************************************

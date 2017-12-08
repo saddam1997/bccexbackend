@@ -65,21 +65,6 @@ module.exports = {
       type: 'string'
     },
 
-    PYYMainbalance: {
-      type: 'float',
-      defaultsTo: 0
-    },
-    PYYbalance: {
-      type: 'float',
-      defaultsTo: 0
-    },
-    FreezedPYYbalance: {
-      type: 'float',
-      defaultsTo: 0
-    },
-    userPYYAddress: {
-      type: 'string'
-    },
 
     encryptedPassword: {
       type: 'string'
@@ -133,15 +118,6 @@ module.exports = {
     asksGDS: {
       collection: 'askGDS',
       via: 'askownerGDS'
-    },
-    //PYY
-    bidsPYY: {
-      collection: 'bidPYY',
-      via: 'bidownerPYY'
-    },
-    asksPYY: {
-      collection: 'askPYY',
-      via: 'askownerPYY'
     },
     loginHistory: {
       collection: 'LoginHistory',
