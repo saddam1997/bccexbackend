@@ -2064,13 +2064,13 @@ module.exports = {
       .exec(function(err, allAskDetailsToExecute) {
         if (err) {
           return res.json({
-            "message": "Error found to get AskEBT !!",
+            "message": "Error found to get AskGDS !!",
             statusCode: 401
           });
         }
         if (!allAskDetailsToExecute) {
           return res.json({
-            "message": "No AskEBT Found!!",
+            "message": "No AskGDS Found!!",
             statusCode: 401
           });
         }
@@ -2112,7 +2112,7 @@ module.exports = {
               });
           } else {
             return res.json({
-              "message": "No AskEBT Found!!",
+              "message": "No AskGDS Found!!",
               statusCode: 401
             });
           }
@@ -2126,13 +2126,13 @@ module.exports = {
       .exec(function(err, allAskDetailsToExecute) {
         if (err) {
           return res.json({
-            "message": "Error found to get AskEBT !!",
+            "message": "Error found to get AskGDS !!",
             statusCode: 401
           });
         }
         if (!allAskDetailsToExecute) {
           return res.json({
-            "message": "No AskEBT Found!!",
+            "message": "No AskGDS Found!!",
             statusCode: 401
           });
         }
@@ -2192,13 +2192,13 @@ module.exports = {
       .exec(function(err, allAskDetailsToExecute) {
         if (err) {
           return res.json({
-            "message": "Error found to get AskEBT !!",
+            "message": "Error found to get AskGDS !!",
             statusCode: 401
           });
         }
         if (!allAskDetailsToExecute) {
           return res.json({
-            "message": "No AskEBT Found!!",
+            "message": "No AskGDS Found!!",
             statusCode: 401
           });
         }
@@ -2240,7 +2240,7 @@ module.exports = {
               });
           } else {
             return res.json({
-              "message": "No AskEBT Found!!",
+              "message": "No AskGDS Found!!",
               statusCode: 401
             });
           }
@@ -2258,13 +2258,13 @@ module.exports = {
       .exec(function(err, allAskDetailsToExecute) {
         if (err) {
           return res.json({
-            "message": "Error found to get AskEBT !!",
+            "message": "Error found to get AskGDS !!",
             statusCode: 401
           });
         }
         if (!allAskDetailsToExecute) {
           return res.json({
-            "message": "No AskEBT Found!!",
+            "message": "No AskGDS Found!!",
             statusCode: 401
           });
         }
